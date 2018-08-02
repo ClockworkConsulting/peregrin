@@ -7,4 +7,5 @@
 .project
 .settings
 .cache
+.bloop
 target
