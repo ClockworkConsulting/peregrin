@@ -5,6 +5,7 @@ import java.sql.Connection
 import dk.cwconsult.peregrin.core.DisjointMigrationsException
 import dk.cwconsult.peregrin.core.Migration
 import dk.cwconsult.peregrin.core.MigrationModifiedException
+import dk.cwconsult.peregrin.core.AppliedMigrations
 import dk.cwconsult.peregrin.core.Schema
 import dk.cwconsult.peregrin.core.Table
 import dk.cwconsult.peregrin.core.impl.ConnectionImplicits._
@@ -64,12 +65,14 @@ private[peregrin] class MigrationsImpl(connection: Connection, schema: Schema) {
     }
   }
 
-  private[this] def applyMigration(changeLogEntry: ChangeLogEntry): Unit = {
+  private[this] def applyMigration(changeLogEntry: ChangeLogEntry): ChangeLogEntry = {
     // Perform the migration. We assume that all statements are "updates", i.e.
     // either UPDATE/INSERT/etc. or DDL statements.
     connection.executeUpdate(changeLogEntry.sql)
     // Insert the change log entry.
     insertChangeLogEntry(changeLogEntry)
+    // Return applied changeLogEntry
+    changeLogEntry
   }
 
   /**
@@ -179,7 +182,7 @@ private[peregrin] class MigrationsImpl(connection: Connection, schema: Schema) {
   /**
    * Apply change log to the database accessible through the given connection.
    */
-  def applyChangeLog(_migrations: Vector[Migration]): Unit = {
+  def applyChangeLog(_migrations: Vector[Migration]): AppliedMigrations = {
     // Sanitize input
     val allMigrations = removeDuplicates(_migrations
       // Make sure the migrations are in sorted order.
@@ -202,18 +205,24 @@ private[peregrin] class MigrationsImpl(connection: Connection, schema: Schema) {
     // exactly one process will get to perform the operations while
     // the others wait and will discover that updates have already
     // been performed.
-    withChangeLogLock {
-      // We verify all the change log entries and select which
-      // have yet to be applied.
-      val changeLogEntriesToApply = verifyChangeLogEntries(allMigrations)
-      // Apply everything from there and up.
-      for (changeLogEntry <- changeLogEntriesToApply) {
-        // Apply each migration.
-        applyMigration(changeLogEntry)
+    val appliedChangeLogEntries: Vector[ChangeLogEntry] =
+      withChangeLogLock {
+        // We verify all the change log entries and select which
+        // have yet to be applied.
+        val changeLogEntriesToApply = verifyChangeLogEntries(allMigrations)
+        // Apply everything from there and up.
+        changeLogEntriesToApply.map(applyMigration)
       }
-    }
     // Commit all changes
     connection.commit()
+    // Return migration result
+    AppliedMigrations(
+      migrations = appliedChangeLogEntries
+        .map { cl =>
+          Migration(
+            identifier = cl.identifier,
+            sql = cl.sql)
+        })
   }
 
 }
