@@ -6,6 +6,7 @@ import dk.cwconsult.peregrin.core.DisjointMigrationsException
 import dk.cwconsult.peregrin.core.Migration
 import dk.cwconsult.peregrin.core.MigrationModifiedException
 import dk.cwconsult.peregrin.core.AppliedMigrations
+import dk.cwconsult.peregrin.core.InvalidMigrationSequenceException
 import dk.cwconsult.peregrin.core.Schema
 import dk.cwconsult.peregrin.core.Table
 import dk.cwconsult.peregrin.core.impl.ConnectionImplicits._
@@ -189,7 +190,13 @@ private[peregrin] class MigrationsImpl(connection: Connection, schema: Schema) {
       .sortBy(_.identifier))
     // Make sure that all the identifiers are contiguous.
     if (!isContiguous(allMigrations)) {
-      throw new DisjointMigrationsException(s"Identifiers for migrations MUST be contiguous and start at 0")
+      throw new DisjointMigrationsException(
+        s"Identifiers for migrations MUST be contiguous and start at 0")
+    }
+    // Make sure nothing changed with duplicate-removal, and sorting
+    if (allMigrations != _migrations) {
+      throw new InvalidMigrationSequenceException(
+        s"Provided migrations MUST be ordered by identifier, and contain no duplicates")
     }
     // Disable auto-commit; we absolutely cannot have commits at "random" points
     // during the migration.
