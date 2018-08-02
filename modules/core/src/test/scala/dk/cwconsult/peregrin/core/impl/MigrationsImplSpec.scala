@@ -55,7 +55,7 @@ class MigrationsImplSpec extends WordSpec {
       assertCanQuery("SELECT * FROM X, Y")
 
     def migrate(migrations: Seq[Migration])(implicit dbSession: DBSession): Unit = {
-      Migrations.applyMigrations(dbSession.connection, schema, migrations)
+      val _ = Migrations.applyMigrations(dbSession.connection, schema, migrations)
     }
 
     def withTransaction(f: DBSession => Assertion): Assertion = {
