@@ -3,6 +3,7 @@ package dk.cwconsult.peregrin.core.impl
 import java.util.UUID
 
 import dk.cwconsult.peregrin.core.DisjointMigrationsException
+import dk.cwconsult.peregrin.core.InvalidMigrationSequenceException
 import dk.cwconsult.peregrin.core.Migration
 import dk.cwconsult.peregrin.core.MigrationModifiedException
 import dk.cwconsult.peregrin.core.Migrations
@@ -85,14 +86,14 @@ class MigrationsImplSpec extends WordSpec {
           }
         }
 
-        "ignores migrations that have already been applied (single call)" in new Fixture(schema) {
+        "abort if duplicate migrations are provided(single call)" in new Fixture(schema) {
           withTransaction { implicit session =>
-            // Exercise
-            migrate(Seq(
-              Migration(0, createXSql),
-              Migration(0, createXSql))) // Would fail if applied again
-            // Verify:
-            assertCanSelectFromX()
+            assertThrows[InvalidMigrationSequenceException] {
+              // Exercise
+              migrate(Seq(
+                Migration(0, createXSql),
+                Migration(0, createXSql))) // Causes aborted migration
+            }
           }
         }
 
