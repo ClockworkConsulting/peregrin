@@ -92,6 +92,12 @@ private[peregrin] class MigrationsImpl(connection: Connection, schema: Schema) {
   }
 
   /**
+    * Trim leading/trailing whitespace.
+    */
+  private[this] def trimSql(sql: String): String =
+    sql.trim
+
+  /**
     * Verify stored checksums of existing migrations and return the
     * list of migrations that have yet to be performed.
     */
@@ -111,8 +117,10 @@ private[peregrin] class MigrationsImpl(connection: Connection, schema: Schema) {
     for (correspondingChangeLogEntries <- existingChangeLogEntries.zip(inputChangeLogEntries)) {
       val existingChangeLogEntry = correspondingChangeLogEntries._1
       val inputChangeLogEntry = correspondingChangeLogEntries._2
-      // Check that the SQL matches
-      if (existingChangeLogEntry.sql != inputChangeLogEntry.sql) {
+      // Check that the SQL matches. We need to explicitly trim existing
+      // SQL entries since they may have been inserted before we started
+      // trimming input migration SQL.
+      if (trimSql(existingChangeLogEntry.sql) != inputChangeLogEntry.sql) {
         throwDoesNotMatch(
           existingSql = existingChangeLogEntry.sql,
           newSql = inputChangeLogEntry.sql)
@@ -184,8 +192,10 @@ private[peregrin] class MigrationsImpl(connection: Connection, schema: Schema) {
    * Apply change log to the database accessible through the given connection.
    */
   def applyChangeLog(_migrations: Vector[Migration]): AppliedMigrations = {
+    // Trim all input SQL.
+    val trimmedMigrations = _migrations.map(m => m.copy(sql = trimSql(m.sql)))
     // Sanitize input
-    val allMigrations = removeDuplicates(_migrations
+    val allMigrations = removeDuplicates(trimmedMigrations
       // Make sure the migrations are in sorted order.
       .sortBy(_.identifier))
     // Make sure that all the identifiers are contiguous.
@@ -194,7 +204,7 @@ private[peregrin] class MigrationsImpl(connection: Connection, schema: Schema) {
         s"Identifiers for migrations MUST be contiguous and start at 0")
     }
     // Make sure nothing changed with duplicate-removal, and sorting
-    if (allMigrations != _migrations) {
+    if (allMigrations != trimmedMigrations) {
       throw new InvalidMigrationSequenceException(
         s"Provided migrations MUST be ordered by identifier, and contain no duplicates")
     }

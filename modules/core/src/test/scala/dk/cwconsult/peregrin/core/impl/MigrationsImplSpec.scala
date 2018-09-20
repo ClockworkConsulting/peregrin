@@ -43,6 +43,14 @@ class MigrationsImplSpec extends WordSpec {
       succeed
     }
 
+    def readMigrations()(implicit dbSession: DBSession): Seq[(Int, String)] =
+      dbSession.list[(Int, String)](
+        s"""
+           |  SELECT "identifier", "sql"
+           |    FROM $schema."__peregrin_changelog__"
+           |ORDER BY "identifier" ASC
+           |""".stripMargin)(rs => (rs.int(1), rs.string(2)))
+
     def assertCanSelectFromX()(implicit dbSession: DBSession): Assertion =
       assertCanQuery("SELECT * FROM X")
 
@@ -170,6 +178,35 @@ class MigrationsImplSpec extends WordSpec {
             }
             // Verify
             assert(exception.getMessage.contains("MUST be contiguous"))
+          }
+        }
+
+        "trim whitespace from beginning/end of SQL on insert" in new Fixture(schema) {
+          withTransaction { implicit sessions =>
+            // Exercise: Create the migration
+            migrate(Seq(
+              Migration(0, "\t    " + createXSql + "    ")
+            ))
+            // Verify
+            val migrations = readMigrations()
+            assert(migrations.head._1 === 0)
+            assert(!migrations.head._2.head.isSpaceChar)
+            assert(!migrations.head._2.last.isSpaceChar)
+          }
+        }
+
+        "ignore differences in whitespace from beginning/end of SQL" in new Fixture(schema) {
+          withTransaction { implicit session =>
+            // Exercise: Create the 'base' migration
+            migrate(Seq(
+              Migration(0, createXSql)
+            ))
+            // Exercise: Add 'spurious' whitespace
+            migrate(Seq(
+              Migration(0, "  \t\n" + createXSql + "\r\n")
+            ))
+            // If we get here, we're OK
+            succeed
           }
         }
 
