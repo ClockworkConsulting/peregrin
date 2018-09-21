@@ -1,3 +1,5 @@
+import ReleaseTransformations._
+
 //
 // Project metadata
 //
@@ -34,6 +36,27 @@ libraryDependencies in ThisBuild ++= Seq(
   Dependencies.log4jApi % "test",
   Dependencies.log4jCore % "test",
   Dependencies.log4jSlf4jImpl % "test")
+
+// ==============================================================
+// sbt-release
+// ==============================================================
+
+releaseCrossBuild := true
+
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  releaseStepCommandAndRemaining("+publishSigned"),
+  setNextVersion,
+  commitNextVersion,
+  releaseStepCommand("sonatypeReleaseAll"),
+  pushChanges
+)
 
 // ==============================================================
 // Peregrin Migrations
