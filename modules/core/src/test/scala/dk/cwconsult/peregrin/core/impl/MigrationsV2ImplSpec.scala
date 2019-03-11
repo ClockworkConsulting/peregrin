@@ -10,18 +10,34 @@ import dk.cwconsult.peregrin.core.Schema
 import dk.cwconsult.peregrin.core.test.Fixture
 import org.scalatest.WordSpec
 
-class MigrationsImplSpec extends WordSpec {
+class MigrationsV2ImplSpec extends WordSpec {
 
   for (schema <- Vector(Schema.Public, Schema.Named(UUID.randomUUID.toString))) {
 
-    "MigrationV1.applyMigrations method" when {
+    val migrationId0 = UUID.randomUUID()
+    val migrationId1 = UUID.randomUUID()
+    val migrationId2 = UUID.randomUUID()
+
+    "MigrationV2.applyMigrations method" when {
       s"applied to schema $schema" should {
+
+        "require at least one root node" in new Fixture(schema) {
+          withTransaction { implicit session =>
+            // Exercise
+            val exception = intercept[InvalidMigrationSequenceException] {
+              migrate(Seq(
+                Migration(0, migrationId1, Some(migrationId0), createXSql)))
+            }
+            // Verify
+            assert(exception.getMessage.contains("MUST contain at least one root node"))
+          }
+        }
 
         "can apply a single migration" in new Fixture(schema) {
           withTransaction { implicit session =>
             // Exercise
             migrate(Seq(
-              Migration(0, createXSql)))
+              Migration(0, migrationId0, None, createXSql)))
             // Verify
             assertCanSelectFromX()
           }
@@ -32,8 +48,8 @@ class MigrationsImplSpec extends WordSpec {
             assertThrows[InvalidMigrationSequenceException] {
               // Exercise
               migrate(Seq(
-                Migration(0, createXSql),
-                Migration(0, createXSql))) // Causes aborted migration
+                Migration(0, migrationId0, None, createXSql),
+                Migration(0, migrationId0, None, createXSql))) // Causes aborted migration
             }
           }
         }
@@ -42,9 +58,9 @@ class MigrationsImplSpec extends WordSpec {
           withTransaction { implicit session =>
             // Exercise
             migrate(Seq(
-              Migration(0, createXSql)))
+              Migration(0, migrationId0, None, createXSql)))
             migrate(Seq(
-              Migration(0, createXSql))) // Would fail if applied again
+              Migration(0, migrationId0, None, createXSql))) // Would fail if applied again
             // Verify
             assertCanSelectFromX()
           }
@@ -55,8 +71,8 @@ class MigrationsImplSpec extends WordSpec {
             // Exercise
             val exception = intercept[MigrationModifiedException] {
               migrate(Seq(
-                Migration(0, createXSql),
-                Migration(0, createXSqlBad)))
+                Migration(0, migrationId0, None, createXSql),
+                Migration(0, migrationId0, None, createXSqlBad)))
             }
             // Verify
             assert(exception.getMessage.contains("does not match"))
@@ -67,10 +83,10 @@ class MigrationsImplSpec extends WordSpec {
           withTransaction { implicit session =>
             // Exercise
             migrate(Seq(
-              Migration(0, createXSql)))
+              Migration(0, migrationId0, None, createXSql)))
             val exception = intercept[MigrationModifiedException] {
               migrate(Seq(
-                Migration(0, createXSqlBad)))
+                Migration(0, migrationId0, None, createXSqlBad)))
             }
             // Verify
             assert(exception.getMessage.contains("does not match"))
@@ -81,8 +97,8 @@ class MigrationsImplSpec extends WordSpec {
           withTransaction { implicit session =>
             // Exercise
             migrate(Seq(
-              Migration(0, createXSql),
-              Migration(1, createYSql)))
+              Migration(0, migrationId0, None, createXSql),
+              Migration(1, migrationId1, Some(migrationId0), createYSql)))
             // Verify: Make sure both migrations have been applied
             assertCanSelectFromXY()
           }
@@ -93,8 +109,8 @@ class MigrationsImplSpec extends WordSpec {
             // Exercise
             val exception = intercept[DisjointMigrationsException] {
               migrate(Seq(
-                Migration(1, createXSql),
-                Migration(2, createYSql)))
+                Migration(1, migrationId0, None, createXSql),
+                Migration(2, migrationId1, Some(migrationId0), createYSql)))
             }
             // Verify
             assert(exception.getMessage.contains("MUST be contiguous"))
@@ -106,11 +122,24 @@ class MigrationsImplSpec extends WordSpec {
             // Exercise
             val exception = intercept[DisjointMigrationsException] {
               migrate(Seq(
-                Migration(0, createXSql),
-                Migration(2, createYSql)))
+                Migration(0, migrationId0, None, createXSql),
+                Migration(2, migrationId1, Some(migrationId0), createYSql)))
             }
             // Verify
             assert(exception.getMessage.contains("MUST be contiguous"))
+          }
+        }
+
+        "throws an exception for sequences with references to unknown migrations" in new Fixture(schema) {
+          withTransaction { implicit session =>
+            // Exercise
+            val exception = intercept[InvalidMigrationSequenceException] {
+              migrate(Seq(
+                Migration(0, migrationId0, None, createXSql),
+                Migration(1, migrationId1, Some(migrationId2), createYSql)))
+            }
+            // Verify
+            assert(exception.getMessage.contains("MUST reference valid parents"))
           }
         }
 
@@ -118,7 +147,7 @@ class MigrationsImplSpec extends WordSpec {
           withTransaction { implicit sessions =>
             // Exercise: Create the migration
             migrate(Seq(
-              Migration(0, "\t    " + createXSql + "    ")
+              Migration(0, migrationId0, None, "\t    " + createXSql + "    ")
             ))
             // Verify
             val migrations = readMigrations()
@@ -132,11 +161,11 @@ class MigrationsImplSpec extends WordSpec {
           withTransaction { implicit session =>
             // Exercise: Create the 'base' migration
             migrate(Seq(
-              Migration(0, createXSql)
+              Migration(0, migrationId0, None, createXSql)
             ))
             // Exercise: Add 'spurious' whitespace
             migrate(Seq(
-              Migration(0, "  \t\n" + createXSql + "\r\n")
+              Migration(0, migrationId0, None, "  \t\n" + createXSql + "\r\n")
             ))
             // If we get here, we're OK
             succeed

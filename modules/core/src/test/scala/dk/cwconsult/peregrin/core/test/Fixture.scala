@@ -1,5 +1,7 @@
 package dk.cwconsult.peregrin.core.test
 
+import java.util.UUID
+
 import dk.cwconsult.peregrin.core.Migration
 import dk.cwconsult.peregrin.core.Migrations
 import dk.cwconsult.peregrin.core.Schema
@@ -22,7 +24,7 @@ class Fixture(schema: Schema) {
   val createXSql: String = "CREATE TABLE X (A INT)"
   val createYSql: String = "CREATE TABLE Y (B INT)"
   val createXSqlBad: String = "CREATE TABLE X (Y CHAR(1))"
-  val createTableSql: String = "CREATE TABLE ? (X INT)"
+  def createTableSql(table: String): String = s"CREATE TABLE $table (X INT)"
 
   def assertCanQuery(sql  : String)(implicit dbSession: DBSession): Assertion = {
     // Force a query; we are relying on the "list" function being strict here.
@@ -32,13 +34,34 @@ class Fixture(schema: Schema) {
     Assertions.succeed
   }
 
-  def readMigrations()(implicit dbSession: DBSession): Seq[(Int, String)] =
-    dbSession.list[(Int, String)](
+  case class ChangeLogEntry(
+    legacyId: Int,
+    sql: String,
+    migrationId: Option[UUID],
+    migrationParentId: Option[UUID]
+  )
+
+  def readMigrations()(implicit dbSession: DBSession): Seq[ChangeLogEntry] =
+    dbSession.list[ChangeLogEntry](
       s"""
-         |  SELECT "identifier", "sql"
+         |  SELECT "identifier", "sql", "migration_id", "migration_parent_id"
          |    FROM $schema."__peregrin_changelog__"
          |ORDER BY "identifier" ASC
-         |""".stripMargin)(rs => (rs.int(1), rs.string(2)))
+         |""".stripMargin)(
+      rs => ChangeLogEntry(
+        rs.int(1),
+        rs.string(2),
+        rs.stringOpt(3).map(UUID.fromString),
+        rs.stringOpt(4).map(UUID.fromString)))
+
+  def readChangeLogVersion()(implicit dbSession: DBSession): Option[Int] =
+    dbSession.first(
+      s"""
+         SELECT "value" FROM $schema."__peregrin_metadata__" WHERE "identifier" = ?
+       """.stripMargin,
+      "version")(rs =>
+        rs.int(1)
+      )
 
   def assertCanSelectFromX()(implicit dbSession: DBSession): Assertion =
     assertCanQuery("SELECT * FROM X")
@@ -51,6 +74,11 @@ class Fixture(schema: Schema) {
 
   def assertCanSelectFromXY()(implicit dbSession: DBSession): Assertion =
     assertCanQuery("SELECT * FROM X, Y")
+
+  def assertChangeLogVersionIs(expectedVersion: Int)(implicit dbSession: DBSession): Assertion = {
+    import Assertions._
+    assert(readChangeLogVersion() === Some(expectedVersion))
+  }
 
   def migrate(migrations: Seq[Migration])(implicit dbSession: DBSession): Unit = {
     val _ = Migrations.applyMigrations(dbSession.connection, schema, migrations)
