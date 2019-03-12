@@ -9,16 +9,13 @@ import dk.cwconsult.peregrin.core.MigrationModifiedException
 import dk.cwconsult.peregrin.core.Migrations
 import dk.cwconsult.peregrin.core.Schema
 import dk.cwconsult.peregrin.core.Table
-import dk.cwconsult.peregrin.core.impl.MigrationsImplSpec.createConnectionPool
-import dk.cwconsult.tempgres.TempgresClient
+import dk.cwconsult.peregrin.core.test.TempgresConnection
 import org.scalatest.Assertion
 import org.scalatest.WordSpec
 import scalikejdbc.ConnectionPool
 import scalikejdbc.DB
 import scalikejdbc.DBSession
-import scalikejdbc.GlobalSettings
 import scalikejdbc.LoanPattern
-import scalikejdbc.LoggingSQLAndTimeSettings
 
 class MigrationsImplSpec extends WordSpec {
 
@@ -28,7 +25,7 @@ class MigrationsImplSpec extends WordSpec {
   class Fixture(schema: Schema) {
 
     val connectionPool: ConnectionPool =
-      createConnectionPool()
+      TempgresConnection.createConnectionPool()
 
     val createXSql: String = "CREATE TABLE X (A INT)"
     val createYSql: String = "CREATE TABLE Y (B INT)"
@@ -213,40 +210,6 @@ class MigrationsImplSpec extends WordSpec {
       }
     }
 
-  }
-
-}
-
-object MigrationsImplSpec {
-
-  /**
-   * Create connection pool connected to a temporary database.
-   */
-  def createConnectionPool(): ConnectionPool = {
-    // Generate connection pool name which is unlikely to collide with anything.
-    // We use this as a way to catch mistakes where the wrong connection pool
-    // is being accessed. This also prevents conflicts with other tests which
-    // could run simultaneously.
-    val connectionPoolName: String =
-      UUID.randomUUID().toString
-
-    // Create the database and connection pool
-    val database =
-      TempgresClient.createTemporaryDatabase(System.getProperty("tempgres.url", "http://tempgres:8080"))
-
-    ConnectionPool.add(
-      connectionPoolName,
-      database.getUrl,
-      database.getCredentials.getUserName,
-      database.getCredentials.getPassword)
-
-    // Reduce log spam.
-    GlobalSettings.loggingSQLAndTime = LoggingSQLAndTimeSettings(
-      singleLineMode = true,
-      logLevel = 'trace)
-
-    // Return the connection pool
-    ConnectionPool.get(connectionPoolName)
   }
 
 }
