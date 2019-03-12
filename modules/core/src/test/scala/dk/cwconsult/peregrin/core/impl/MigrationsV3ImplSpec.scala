@@ -2,26 +2,28 @@ package dk.cwconsult.peregrin.core.impl
 
 import java.util.UUID
 
-import dk.cwconsult.peregrin.core.DisjointMigrationsException
 import dk.cwconsult.peregrin.core.InvalidMigrationSequenceException
 import dk.cwconsult.peregrin.core.MigrationModifiedException
-import dk.cwconsult.peregrin.core.Migration
 import dk.cwconsult.peregrin.core.Schema
+import dk.cwconsult.peregrin.core.Migration
 import dk.cwconsult.peregrin.core.test.Fixture
 import org.scalatest.WordSpec
 
-class MigrationsImplSpec extends WordSpec {
+class MigrationsV3ImplSpec extends WordSpec {
 
   for (schema <- Vector(Schema.Public, Schema.Named(UUID.randomUUID.toString))) {
+    val migrationId0 = UUID.randomUUID()
+    val migrationId1 = UUID.randomUUID()
+    val migrationId2 = UUID.randomUUID()
 
-    "MigrationV1.applyMigrations method" when {
+    "MigrationiV3.applyMigrations method" when {
       s"applied to schema $schema" should {
 
         "can apply a single migration" in new Fixture(schema) {
           withTransaction { implicit session =>
             // Exercise
-            migrate(Seq(
-              Migration(0, createXSql)))
+            migrate(Vector(
+              Migration(migrationId0, createXSql)))
             // Verify
             assertCanSelectFromX()
           }
@@ -31,9 +33,9 @@ class MigrationsImplSpec extends WordSpec {
           withTransaction { implicit session =>
             assertThrows[InvalidMigrationSequenceException] {
               // Exercise
-              migrate(Seq(
-                Migration(0, createXSql),
-                Migration(0, createXSql))) // Causes aborted migration
+              migrate(Vector(
+                Migration(migrationId0, createXSql),
+                Migration(migrationId0, createXSql))) // Causes aborted migration
             }
           }
         }
@@ -41,10 +43,10 @@ class MigrationsImplSpec extends WordSpec {
         "ignores migrations that have already been applied (multiple calls)" in new Fixture(schema) {
           withTransaction { implicit session =>
             // Exercise
-            migrate(Seq(
-              Migration(0, createXSql)))
-            migrate(Seq(
-              Migration(0, createXSql))) // Would fail if applied again
+            migrate(Vector(
+              Migration(migrationId0, createXSql)))
+            migrate(Vector(
+              Migration(migrationId0, createXSql))) // Would fail if applied again
             // Verify
             assertCanSelectFromX()
           }
@@ -54,9 +56,9 @@ class MigrationsImplSpec extends WordSpec {
           withTransaction { implicit session =>
             // Exercise
             val exception = intercept[MigrationModifiedException] {
-              migrate(Seq(
-                Migration(0, createXSql),
-                Migration(0, createXSqlBad)))
+              migrate(Vector(
+                Migration(migrationId0, createXSql),
+                Migration(migrationId0, createXSqlBad)))
             }
             // Verify
             assert(exception.getMessage.contains("does not match"))
@@ -66,11 +68,11 @@ class MigrationsImplSpec extends WordSpec {
         "throws an exception if SQL is changed for a given change set ID (multiple calls)" in new Fixture(schema) {
           withTransaction { implicit session =>
             // Exercise
-            migrate(Seq(
-              Migration(0, createXSql)))
+            migrate(Vector(
+              Migration(migrationId0, createXSql)))
             val exception = intercept[MigrationModifiedException] {
-              migrate(Seq(
-                Migration(0, createXSqlBad)))
+              migrate(Vector(
+                Migration(migrationId0, createXSqlBad)))
             }
             // Verify
             assert(exception.getMessage.contains("does not match"))
@@ -80,72 +82,66 @@ class MigrationsImplSpec extends WordSpec {
         "can apply multiple distinct migrations in a single call" in new Fixture(schema) {
           withTransaction { implicit session =>
             // Exercise
-            migrate(Seq(
-              Migration(0, createXSql),
-              Migration(1, createYSql)))
+            migrate(Vector(
+              Migration(migrationId0, createXSql),
+              Migration(migrationId1, createYSql)))
             // Verify: Make sure both migrations have been applied
             assertCanSelectFromXY()
-          }
-        }
-
-        "throws an exception for sequences of migrations that do not start at 0" in new Fixture(schema) {
-          withTransaction { implicit session =>
-            // Exercise
-            val exception = intercept[DisjointMigrationsException] {
-              migrate(Seq(
-                Migration(1, createXSql),
-                Migration(2, createYSql)))
-            }
-            // Verify
-            assert(exception.getMessage.contains("MUST be contiguous"))
-          }
-        }
-
-        "throws an exception for non-contiguous sequences of migrations" in new Fixture(schema) {
-          withTransaction { implicit session =>
-            // Exercise
-            val exception = intercept[DisjointMigrationsException] {
-              migrate(Seq(
-                Migration(0, createXSql),
-                Migration(2, createYSql)))
-            }
-            // Verify
-            assert(exception.getMessage.contains("MUST be contiguous"))
           }
         }
 
         "trim whitespace from beginning/end of SQL on insert" in new Fixture(schema) {
           withTransaction { implicit sessions =>
             // Exercise: Create the migration
-            migrate(Seq(
-              Migration(0, "\t    " + createXSql + "    ")
+            migrate(Vector(
+              Migration(migrationId0, "\t    " + createXSql + "    ")
             ))
             // Verify
             val migrations = readMigrations()
-            assert(migrations.head.legacyId === 0)
+            assert(migrations.head.legacyId === -1)
+            assert(migrations.head.migrationId === Some(migrationId0))
             assert(!migrations.head.sql.head.isSpaceChar)
             assert(!migrations.head.sql.last.isSpaceChar)
+            assertCanSelectFromX()
           }
         }
 
         "ignore differences in whitespace from beginning/end of SQL" in new Fixture(schema) {
           withTransaction { implicit session =>
             // Exercise: Create the 'base' migration
-            migrate(Seq(
-              Migration(0, createXSql)
+            migrate(Vector(
+              Migration(migrationId0, createXSql)
             ))
             // Exercise: Add 'spurious' whitespace
-            migrate(Seq(
-              Migration(0, "  \t\n" + createXSql + "\r\n")
+            migrate(Vector(
+              Migration(migrationId0, "  \t\n" + createXSql + "\r\n")
             ))
             // If we get here, we're OK
             succeed
           }
         }
 
+        "have deterministic order of execution" in new Fixture(schema) {
+          withTransaction { implicit session =>
+            val migrationId2 = UUID.randomUUID()
+            val migrationId3 = UUID.randomUUID()
+            val migrationId4 = UUID.randomUUID()
+            val migrationId5 = UUID.randomUUID()
+            // Exercise
+            migrate(Vector(
+              Migration(migrationId0, createXSql),
+              Migration(migrationId1, "ALTER TABLE X RENAME COLUMN A TO B"),
+              Migration(migrationId2, "ALTER TABLE X RENAME COLUMN B TO C"),
+              Migration(migrationId3, "ALTER TABLE X RENAME COLUMN C TO D"),
+              Migration(migrationId4, "ALTER TABLE X RENAME COLUMN D TO E"),
+              Migration(migrationId5, "ALTER TABLE X RENAME COLUMN E TO F")))
+            // Verify: Make sure both migrations have been applied
+            assertCanQuery("SELECT F FROM X")
+          }
+        }
+
       }
     }
-
   }
 
 }

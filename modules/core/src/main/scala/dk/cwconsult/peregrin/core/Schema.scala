@@ -12,6 +12,11 @@ sealed trait Schema {
   protected[this] def asSql: String
 
   /**
+    * Return a string representation, safe from quotes
+    */
+  def name: String
+
+  /**
     * Return a string representing an SQL-safe string representing the Schema.
     */
   override final def toString(): String =
@@ -29,7 +34,7 @@ object Schema {
     // Private implementation to avoid direct pattern matching
     // since we cannot properly support safe pattern matching on
     // given the "special" names.
-    private[Named] case class NamedImpl(name: String) extends Schema {
+    private[Named] case class NamedImpl(override val name: String) extends Schema {
       override val asSql: String =
         SQLSupport.quoteIdentifier(name)
     }
