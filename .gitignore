@@ -9,3 +9,4 @@
 .cache
 .bloop
 target
+/out
