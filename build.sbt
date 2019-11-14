@@ -12,7 +12,7 @@ organization in ThisBuild := "dk.cwconsult.peregrin"
 
 scalaVersion in ThisBuild := "2.12.4"
 
-crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.4")
+crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.4", "2.13.1")
 
 //
 // Compiler Options
