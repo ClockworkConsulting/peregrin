@@ -10,9 +10,13 @@ organization in ThisBuild := "dk.cwconsult.peregrin"
 // Scala Versions
 //
 
-scalaVersion in ThisBuild := "2.12.4"
+val scalaVersions = Seq("2.11.12", "2.12.10", "2.13.1")
 
-crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.4", "2.13.1")
+scalaVersion in ThisBuild :=
+  scalaVersions.find(v => "^2\\.12\\.".r.pattern.matcher(v).find()).get
+
+crossScalaVersions in ThisBuild :=
+  scalaVersions
 
 //
 // Compiler Options
