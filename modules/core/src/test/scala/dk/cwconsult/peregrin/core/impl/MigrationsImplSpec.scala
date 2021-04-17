@@ -220,6 +220,17 @@ class MigrationsImplSpec extends WordSpec {
 object MigrationsImplSpec {
 
   /**
+    * Get Tempgres URL with a fallback.
+    */
+  private def getTempgresUrl(): String =
+    Option(System.getenv("TEMPGRES_URL")).getOrElse {
+      Option(System.getProperty("tempgres.url")).getOrElse {
+        // Hardcoded default that'll work on our VPN.
+        "http://tempgres:8080"
+      }
+    }
+
+  /**
    * Create connection pool connected to a temporary database.
    */
   def createConnectionPool(): ConnectionPool = {
@@ -232,7 +243,7 @@ object MigrationsImplSpec {
 
     // Create the database and connection pool
     val database =
-      TempgresClient.createTemporaryDatabase(System.getProperty("tempgres.url", "http://tempgres:8080"))
+      TempgresClient.createTemporaryDatabase(getTempgresUrl())
 
     ConnectionPool.add(
       connectionPoolName,
