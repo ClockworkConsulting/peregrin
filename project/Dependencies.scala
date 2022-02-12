@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
 
   val scalaTest =
-    "org.scalatest" %% "scalatest" % "3.0.8"
+    "org.scalatest" %% "scalatest" % "3.2.11"
 
   object log4j {
     private val v = "2.17.1"

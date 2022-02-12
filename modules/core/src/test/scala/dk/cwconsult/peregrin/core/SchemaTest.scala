@@ -1,9 +1,9 @@
 package dk.cwconsult.peregrin.core
 
 import Schema._
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 
-class SchemaTest extends FlatSpec {
+class SchemaTest extends AnyFlatSpec {
 
   behavior of "Schema"
 

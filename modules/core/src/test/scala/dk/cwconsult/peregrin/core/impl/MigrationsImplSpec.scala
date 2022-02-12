@@ -12,7 +12,7 @@ import dk.cwconsult.peregrin.core.Table
 import dk.cwconsult.peregrin.core.impl.MigrationsImplSpec.createConnectionPool
 import dk.cwconsult.tempgres.TempgresClient
 import org.scalatest.Assertion
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 import scalikejdbc.ConnectionPool
 import scalikejdbc.DB
 import scalikejdbc.DBSession
@@ -20,7 +20,7 @@ import scalikejdbc.GlobalSettings
 import scalikejdbc.LoanPattern
 import scalikejdbc.LoggingSQLAndTimeSettings
 
-class MigrationsImplSpec extends WordSpec {
+class MigrationsImplSpec extends AnyWordSpec {
 
   /**
   * Fixture for running the tests.
