@@ -7,6 +7,12 @@ import ReleaseTransformations._
 ThisBuild / organization := "dk.cwconsult.peregrin"
 
 //
+// Automatically reload the build when source changes
+//
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
+//
 // Scala Versions
 //
 
