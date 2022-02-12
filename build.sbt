@@ -16,13 +16,11 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 // Scala Versions
 //
 
-val scalaVersions = Seq("2.12.10", "2.13.1")
+val scala_2_12 = "2.12.10"
+val scala_2_13 = "2.13.1"
 
-ThisBuild / scalaVersion :=
-  scalaVersions.find(v => "^2\\.12\\.".r.pattern.matcher(v).find()).get
-
-ThisBuild / crossScalaVersions :=
-  scalaVersions
+ThisBuild / scalaVersion := scala_2_12
+ThisBuild / crossScalaVersions := Seq(scala_2_12, scala_2_13)
 
 //
 // Compiler Options
