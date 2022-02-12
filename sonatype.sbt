@@ -1,29 +1,29 @@
-PgpKeys.useGpg in Global := true
+Global / PgpKeys.useGpg := true
 
-PgpKeys.gpgCommand in Global := "gpg2"
+Global / PgpKeys.gpgCommand := "gpg2"
 
-PgpKeys.useGpgAgent in Global := true
+Global / PgpKeys.useGpgAgent := true
 
-publishTo in ThisBuild := sonatypePublishTo.value
+ThisBuild / publishTo := sonatypePublishTo.value
 
-publishMavenStyle in ThisBuild := true
+ThisBuild / publishMavenStyle := true
 
 sonatypeProfileName := "dk.cwconsult"
 
-licenses in ThisBuild := Seq("BSD2" -> url("http://opensource.org/licenses/BSD-2-Clause"))
+ThisBuild / licenses := Seq("BSD2" -> url("http://opensource.org/licenses/BSD-2-Clause"))
 
-homepage in ThisBuild := Some(
+ThisBuild / homepage := Some(
   url("https://github.com/ClockworkConsulting/peregrin")
 )
 
-scmInfo in ThisBuild := Some(
+ThisBuild / scmInfo := Some(
   ScmInfo(
     url("https://github.com/ClockworkConsulting/peregrin"),
     "git@github.com:ClockworkConsulting/peregrin.git"
   )
 )
 
-developers in ThisBuild := List(
+ThisBuild / developers := List(
   Developer(
     id = "BardurArantsson",
     name = "Bardur Arantsson",

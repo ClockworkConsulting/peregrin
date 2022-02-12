@@ -8,5 +8,6 @@
 .settings
 .cache
 .bloop
+.bsp
 target
 /out

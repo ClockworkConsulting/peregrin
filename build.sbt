@@ -4,7 +4,7 @@ import ReleaseTransformations._
 // Project metadata
 //
 
-organization in ThisBuild := "dk.cwconsult.peregrin"
+ThisBuild / organization := "dk.cwconsult.peregrin"
 
 //
 // Scala Versions
@@ -12,17 +12,17 @@ organization in ThisBuild := "dk.cwconsult.peregrin"
 
 val scalaVersions = Seq("2.11.12", "2.12.10", "2.13.1")
 
-scalaVersion in ThisBuild :=
+ThisBuild / scalaVersion :=
   scalaVersions.find(v => "^2\\.12\\.".r.pattern.matcher(v).find()).get
 
-crossScalaVersions in ThisBuild :=
+ThisBuild / crossScalaVersions :=
   scalaVersions
 
 //
 // Compiler Options
 //
 
-scalacOptions in (Compile, compile) in ThisBuild := Seq(
+ThisBuild / Compile / compile / scalacOptions := Seq(
   "-encoding", "utf8",
   "-feature",
   "-deprecation",
@@ -36,7 +36,7 @@ scalacOptions in (Compile, compile) in ThisBuild := Seq(
   "-Ypartial-unification")
 
 // Add logging for all project "test" scopes
-libraryDependencies in ThisBuild ++= Seq(
+ThisBuild / libraryDependencies ++= Seq(
   Dependencies.log4jApi % "test",
   Dependencies.log4jCore % "test",
   Dependencies.log4jSlf4jImpl % "test")
