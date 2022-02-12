@@ -6,7 +6,7 @@ object Dependencies {
     "org.scalatest" %% "scalatest" % "3.0.8"
 
   object log4j {
-    private val v = "2.8.2"
+    private val v = "2.17.1"
     val api = Seq(
       "org.apache.logging.log4j" % "log4j-api" % v,
     )
