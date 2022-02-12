@@ -254,7 +254,7 @@ object MigrationsImplSpec {
     // Reduce log spam.
     GlobalSettings.loggingSQLAndTime = LoggingSQLAndTimeSettings(
       singleLineMode = true,
-      logLevel = 'trace)
+      logLevel = "trace")
 
     // Return the connection pool
     ConnectionPool.get(connectionPoolName)

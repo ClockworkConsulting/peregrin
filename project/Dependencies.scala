@@ -20,7 +20,7 @@ object Dependencies {
     "org.postgresql" % "postgresql" % "42.3.2"
 
   val scalikeJdbcCore =
-    "org.scalikejdbc" %% "scalikejdbc-core" % "3.4.0"
+    "org.scalikejdbc" %% "scalikejdbc-core" % "4.0.0"
 
   val tempgresClient =
     "dk.cwconsult" % "tempgres-client" % "1.1.0"
