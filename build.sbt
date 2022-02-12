@@ -26,18 +26,39 @@ ThisBuild / crossScalaVersions := Seq(scala_2_12, scala_2_13)
 // Compiler Options
 //
 
-ThisBuild / Compile / compile / scalacOptions := Seq(
-  "-encoding", "utf8",
-  "-feature",
-  "-deprecation",
-  "-unchecked",
-  "-Yno-adapted-args",
-  "-Ywarn-value-discard",
-  "-Xfatal-warnings",
-  "-Xfuture",
-  "-Xlint",
-  "-Xmax-classfile-name", "200",
-  "-Ypartial-unification")
+ThisBuild / scalacOptions ++= {
+  val v = scalaVersion.value
+  CrossVersion.partialVersion(v) match {
+    case Some((2, 12)) =>
+      Seq(
+        "-encoding", "utf8",
+        "-feature",
+        "-deprecation",
+        "-unchecked",
+        "-Yno-adapted-args",
+        "-Ywarn-value-discard",
+        "-Xfatal-warnings",
+        "-Xsource:3",
+        "-Xlint",
+        "-Xmax-classfile-name", "200",
+        "-Ypartial-unification",
+      )
+    case Some((2, 13)) =>
+      Seq(
+        "-encoding", "utf8",
+        "-feature",
+        "-deprecation",
+        "-unchecked",
+        "-Ywarn-value-discard",
+        "-Xfatal-warnings",
+        "-Xsource:3",
+        "-Xlint",
+        "-Xlint:adapted-args",
+      )
+    case _ =>
+      throw new IllegalArgumentException(s"Unrecognized Scala version: $v")
+  }
+}
 
 // Add logging for all project "test" scopes
 ThisBuild / libraryDependencies ++= Seq(
