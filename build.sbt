@@ -41,9 +41,9 @@ ThisBuild / Compile / compile / scalacOptions := Seq(
 
 // Add logging for all project "test" scopes
 ThisBuild / libraryDependencies ++= Seq(
-  Dependencies.log4jApi % "test",
-  Dependencies.log4jCore % "test",
-  Dependencies.log4jSlf4jImpl % "test")
+  Dependencies.log4j.api,
+  Dependencies.log4j.impl,
+).flatten.map(_ % "test")
 
 // ==============================================================
 // sbt-release

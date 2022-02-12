@@ -3,24 +3,26 @@ import sbt._
 object Dependencies {
 
   val scalaTest =
-    "org.scalatest" %% "scalatest" % Version.scalaTest
+    "org.scalatest" %% "scalatest" % "3.0.8"
 
-  val log4jApi =
-    "org.apache.logging.log4j" % "log4j-api" % Version.log4j
-
-  val log4jCore =
-    "org.apache.logging.log4j" % "log4j-core" % Version.log4j
-
-  val log4jSlf4jImpl =
-    "org.apache.logging.log4j" % "log4j-slf4j-impl" % Version.log4j
+  object log4j {
+    private val v = "2.8.2"
+    val api = Seq(
+      "org.apache.logging.log4j" % "log4j-api" % v,
+    )
+    val impl = Seq(
+      "org.apache.logging.log4j" % "log4j-core" % v,
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % v,
+    )
+  }
 
   val postgresqlDriver =
-    "org.postgresql" % "postgresql" % Version.postgresqlDriver
+    "org.postgresql" % "postgresql" % "42.1.4.jre7"
 
   val scalikeJdbcCore =
-    "org.scalikejdbc" %% "scalikejdbc-core" % Version.scalikeJDBC
+    "org.scalikejdbc" %% "scalikejdbc-core" % "3.4.0"
 
   val tempgresClient =
-    "dk.cwconsult" % "tempgres-client" % Version.tempgresClient
+    "dk.cwconsult" % "tempgres-client" % "1.1.0"
 
 }
