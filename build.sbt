@@ -18,9 +18,10 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 val scala_2_12 = "2.12.15"
 val scala_2_13 = "2.13.8"
+val scala_3 = "3.1.1"
 
 ThisBuild / scalaVersion := scala_2_12
-ThisBuild / crossScalaVersions := Seq(scala_2_12, scala_2_13)
+ThisBuild / crossScalaVersions := Seq(scala_2_12, scala_2_13, scala_3)
 
 //
 // Compiler Options
@@ -54,6 +55,14 @@ ThisBuild / scalacOptions ++= {
         "-Xsource:3",
         "-Xlint",
         "-Xlint:adapted-args",
+      )
+    case Some((3, _)) =>
+      Seq(
+        "-encoding", "utf8",
+        "-feature",
+        "-deprecation",
+        "-unchecked",
+        "-Xfatal-warnings",
       )
     case _ =>
       throw new IllegalArgumentException(s"Unrecognized Scala version: $v")
