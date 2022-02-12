@@ -16,8 +16,8 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 // Scala Versions
 //
 
-val scala_2_12 = "2.12.10"
-val scala_2_13 = "2.13.1"
+val scala_2_12 = "2.12.15"
+val scala_2_13 = "2.13.8"
 
 ThisBuild / scalaVersion := scala_2_12
 ThisBuild / crossScalaVersions := Seq(scala_2_12, scala_2_13)
