@@ -17,7 +17,7 @@ object Dependencies {
   }
 
   val postgresqlDriver =
-    "org.postgresql" % "postgresql" % "42.1.4.jre7"
+    "org.postgresql" % "postgresql" % "42.3.2"
 
   val scalikeJdbcCore =
     "org.scalikejdbc" %% "scalikejdbc-core" % "3.4.0"
