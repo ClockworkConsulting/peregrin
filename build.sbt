@@ -10,7 +10,7 @@ ThisBuild / organization := "dk.cwconsult.peregrin"
 // Scala Versions
 //
 
-val scalaVersions = Seq("2.11.12", "2.12.10", "2.13.1")
+val scalaVersions = Seq("2.12.10", "2.13.1")
 
 ThisBuild / scalaVersion :=
   scalaVersions.find(v => "^2\\.12\\.".r.pattern.matcher(v).find()).get
